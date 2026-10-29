@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Class Assignments</title>
+<meta name="description" content="Our class assignment board: every class, every assignment, every due date.">
+<style>
+/* Layout: workspace-style board — one column per class, assignment cards sorted by due date */
+:root{
+  --bg:#ffffff; --col:#f7f7f5; --card:#ffffff; --ink:#37352f; --muted:#787774; --faint:#a5a29a;
+  --line:#e9e9e7; --hover:#efefed; --accent:#2383e2; --late:#d44c47;
+  --shadow:0 0 0 1px rgba(15,15,15,.06),0 1px 2px rgba(15,15,15,.08);
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --t-gray:#e3e2e0;--f-gray:#32302c; --t-brown:#eee0da;--f-brown:#442a1e; --t-orange:#fadec9;--f-orange:#49290e;
+  --t-yellow:#fdecc8;--f-yellow:#402c1b; --t-green:#dbeddb;--f-green:#1c3829; --t-blue:#d3e5ef;--f-blue:#183347;
+  --t-purple:#e8deee;--f-purple:#412454; --t-pink:#f5e0e9;--f-pink:#4c2337; --t-red:#ffe2dd;--f-red:#5d1715;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#191919; --col:#202020; --card:#2c2c2c; --ink:#e6e6e4; --muted:#9b9b9b; --faint:#6f6f6f;
+  --line:#2f2f2f; --hover:#333333; --accent:#529cca; --late:#ff7369; --shadow:0 0 0 1px rgba(255,255,255,.06),0 1px 2px rgba(0,0,0,.3);
+  --t-gray:#373737;--f-gray:#d4d4d4; --t-brown:#4a3830;--f-brown:#e6cfc3; --t-orange:#5c3b23;--f-orange:#f5d0ad;
+  --t-yellow:#564328;--f-yellow:#f4dfa8; --t-green:#243d30;--f-green:#c4e5cd; --t-blue:#143a4e;--f-blue:#bfdcf0;
+  --t-purple:#3c2d49;--f-purple:#e0cdef; --t-pink:#4e2c3c;--f-pink:#f2c8dc; --t-red:#522e2a;--f-red:#ffc9c2; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;padding-bottom:max(48px,env(safe-area-inset-bottom,0px))}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cover{height:clamp(220px,42vw,420px);background:var(--col) url("cover.jpg") center 30%/cover no-repeat}
+.cover-inner{max-width:1200px;margin:0 auto;padding-top:max(clamp(20px,4vw,40px),env(safe-area-inset-top,0px))}
+h1{font-size:clamp(30px,6vw,56px);font-weight:800;margin:0;letter-spacing:-.02em;text-wrap:balance;color:#000;max-width:60%}
+.page{max-width:1200px;margin:0 auto}
+.sub{color:var(--muted);margin:16px 0 20px}
+.tabs{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:14px}
+.tab{display:flex;gap:6px;align-items:center;padding:3px 8px;border-radius:4px;font-weight:500;position:relative}
+.tab::after{content:"";position:absolute;left:4px;right:4px;bottom:-7px;height:2px;background:var(--ink)}
+.count{margin-left:auto;color:var(--faint);font-size:13px}
+.notice{background:var(--t-red);color:var(--f-red);border-radius:6px;padding:8px 12px;margin-bottom:12px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;align-items:start;min-height:200px}
+.col{min-width:0;background:var(--col);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.col-head{display:flex;align-items:center;gap:8px;padding:2px 4px 4px;min-width:0}
+.tag{display:inline-block;padding:0 7px;border-radius:4px;font-size:14px;line-height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
+.n{color:var(--faint);font-size:13px}
+.icon-btn{margin-left:auto;background:none;border:0;color:var(--faint);border-radius:4px;min-width:24px;height:24px;cursor:pointer;font:inherit;font-size:16px;line-height:1}
+.icon-btn:hover{background:var(--hover);color:var(--ink)}
+.card{background:var(--card);border-radius:6px;box-shadow:var(--shadow);padding:8px 10px;display:flex;flex-direction:column;gap:4px;position:relative}
+.card .title{font-weight:500;overflow-wrap:anywhere;padding-right:22px}
+.card .due{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.card .due.late{color:var(--late)}
+.card .x{position:absolute;top:5px;right:5px;opacity:0}
+.card:hover .x,.card:focus-within .x{opacity:1}
+.icon-btn.armed{opacity:1;padding:0 6px;font-size:12px;color:var(--late)}
+@media (hover:none){.card .x{opacity:1}}
+.new{display:flex;gap:6px;align-items:center;background:none;border:0;color:var(--muted);padding:5px 6px;border-radius:4px;cursor:pointer;font:inherit;text-align:left}
+.new:hover{background:var(--hover)}
+.add-col{background:none;border:0;color:var(--muted);text-align:left;padding:8px;border-radius:6px;cursor:pointer;font:inherit}
+.add-col:hover{background:var(--hover)}
+.editor{background:var(--card);border-radius:6px;box-shadow:var(--shadow);padding:8px;display:flex;flex-direction:column;gap:6px}
+.editor input{font:inherit;color:var(--ink);background:transparent;border:0;outline:0;padding:2px;width:100%}
+.editor input[type=date]{color:var(--muted);font-size:13px;border:1px solid var(--line);border-radius:4px;padding:3px 6px}
+.editor .row{display:flex;gap:6px;justify-content:flex-end}
+.btn{font:inherit;font-size:13px;border-radius:4px;padding:3px 10px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.6;cursor:default}
+.err{color:var(--late);font-size:12px}
+.empty-board{color:var(--muted);padding:24px 8px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+</style>
+</head>
+<body>
+<div class="cover"><div class="cover-inner gutter"><h1>Class Assignments</h1></div></div>
+<div class="page gutter">
+  <p class="sub">Add your class, then the assignment and when it's due.</p>
+  <div class="tabs"><span class="tab">▦ Board</span><span class="count" id="count"></span></div>
+  <div class="notice" id="notice" hidden></div>
+  <div class="board" id="board"><div class="empty-board">Loading…</div></div>
+</div>
+
+<script>
+const COLORS=['blue','green','orange','purple','pink','yellow','red','brown','gray'];
+const $=id=>document.getElementById(id);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+// A private key for this browser, so people can remove only what they added.
+let ownerKey=store.get('ownerKey');
+if(!ownerKey){ownerKey=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('ownerKey',ownerKey)}
+// Board owner: open the site once with ?admin=YOUR_KEY to be able to remove anything.
+const qp=new URLSearchParams(location.search);
+if(qp.get('admin')){store.set('adminKey',qp.get('admin'));history.replaceState(null,'',location.pathname)}
+const adminKey=store.get('adminKey')||'';
+
+let classes=[],items=[],openEditor=null,armed=null,addingClass=false,errMsg='',busy=false,loaded=false;
+
+async function api(method,path,body){
+  const r=await fetch('/api/board'+(path||''),{method,headers:{'Content-Type':'application/json','x-owner-key':ownerKey,...(adminKey?{'x-admin-key':adminKey}:{})},body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(j.error||'Something went wrong. Try again.');
+  return j;
+}
+async function load(){
+  try{const j=await api('GET');classes=j.classes;items=j.assignments;loaded=true;$('notice').hidden=true}
+  catch(e){$('notice').textContent=e.message;$('notice').hidden=false}
+  if(!busy)render();
+}
+
+function el(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k,v]of Object.entries(attrs)){if(k==='class')e.className=v;else if(k==='style')e.style.cssText=v;else if(k.startsWith('on'))e.addEventListener(k.slice(2),v);else e.setAttribute(k,v)}for(const k of kids)if(k!=null)e.append(k);return e}
+const tagStyle=c=>`background:var(--t-${c});color:var(--f-${c})`;
+function daysUntil(iso){const[y,m,d]=iso.split('-').map(Number);const n=new Date();n.setHours(0,0,0,0);return Math.round((new Date(y,m-1,d)-n)/86400000)}
+function dueText(iso){const[y,m,d]=iso.split('-').map(Number);const dt=new Date(y,m-1,d);const n=daysUntil(iso);
+  const s=dt.toLocaleDateString(undefined,{month:'short',day:'numeric',...(dt.getFullYear()!==new Date().getFullYear()?{year:'numeric'}:{})});
+  const rel=n<0?'Overdue':n===0?'Today':n===1?'Tomorrow':n<=6?`in ${n} days`:'';return{s,rel,late:n<=0}}
+
+function render(){
+  const board=$('board');const out=[];
+  if(!loaded){return}
+  const names=new Set(classes.map(c=>c.name.toLowerCase()));
+  const extra=[...new Set(items.map(i=>i.cls))].filter(n=>!names.has(n.toLowerCase())).map(n=>({id:null,name:n,color:'gray'}));
+  const cols=[...classes,...extra];
+  $('count').textContent=items.length?`${items.length} assignment${items.length>1?'s':''}`:'';
+  for(const c of cols){
+    const list=items.filter(i=>i.cls.toLowerCase()===c.name.toLowerCase()).sort((a,b)=>a.due.localeCompare(b.due));
+    const col=el('div',{class:'col'});
+    const head=el('div',{class:'col-head'},el('span',{class:'tag',style:tagStyle(COLORS.includes(c.color)?c.color:'gray'),title:c.name},c.name),el('span',{class:'n'},String(list.length)));
+    if(c.id&&(c.mine||adminKey)&&(!list.length||adminKey)){
+      const k='c:'+c.id;
+      head.append(el('button',{class:'icon-btn'+(armed===k?' armed':''),title:'Remove class','aria-label':`Remove ${c.name}`,onclick:()=>arm(k,()=>api('DELETE',`?type=class&id=${encodeURIComponent(c.id)}`))},armed===k?'Remove?':'×'));
+    }
+    col.append(head);
+    for(const it of list){
+      const d=dueText(it.due);const k='a:'+it.id;
+      const card=el('div',{class:'card'},el('div',{class:'title'},it.title),
+        el('div',{class:'due'+(d.late?' late':'')},`📅 ${d.s}`,d.rel?el('span',{},'· '+d.rel):null));
+      if(it.mine||adminKey)card.append(el('button',{class:'icon-btn x'+(armed===k?' armed':''),title:'Delete','aria-label':`Delete ${it.title}`,onclick:()=>arm(k,()=>api('DELETE',`?type=assignment&id=${encodeURIComponent(it.id)}`))},armed===k?'Delete?':'×'));
+      col.append(card);
+    }
+    if(c.id){
+      if(openEditor===c.name.toLowerCase())col.append(editor(c.name));
+      else col.append(el('button',{class:'new',onclick:()=>{openEditor=c.name.toLowerCase();addingClass=false;errMsg='';render();setTimeout(()=>$('newTitle')?.focus(),0)}},'+ New'));
+    }
+    out.push(col);
+  }
+  if(addingClass)out.push(classEditor());
+  else out.push(el('button',{class:'add-col',onclick:()=>{addingClass=true;openEditor=null;errMsg='';render();setTimeout(()=>$('newClass')?.focus(),0)}},'+ Add class'));
+  const keep=['newTitle','newDue','newClass'].map(id=>[id,$(id)?.value,document.activeElement?.id===id]);
+  board.replaceChildren(...out);
+  for(const[id,v,f]of keep){const n=$(id);if(n&&v)n.value=v;if(n&&f)n.focus()}
+}
+async function arm(k,fn){
+  if(armed!==k){armed=k;render();setTimeout(()=>{if(armed===k){armed=null;render()}},3500);return}
+  armed=null;try{await fn()}catch(e){$('notice').textContent=e.message;$('notice').hidden=false}await load();
+}
+async function submit(fn){busy=true;try{await fn();errMsg='';openEditor=null;addingClass=false}catch(e){errMsg=e.message}busy=false;await load();render()}
+
+function editor(cls){
+  const t=el('input',{id:'newTitle',placeholder:'Assignment name',maxlength:'140',autocomplete:'off'});
+  const d=el('input',{id:'newDue',type:'date','aria-label':'Due date'});
+  const cancel=()=>{openEditor=null;errMsg='';render()};
+  const save=()=>{const title=t.value.trim(),due=d.value;
+    if(!title||!due){errMsg=!title?'Add an assignment name.':'Pick a due date.';render();return}
+    submit(()=>api('POST','',{type:'assignment',cls,title,due}))};
+  const keys=e=>{if(e.key==='Enter'){e.preventDefault();save()}if(e.key==='Escape')cancel()};
+  t.addEventListener('keydown',keys);d.addEventListener('keydown',keys);
+  return el('div',{class:'editor'},t,d,errMsg?el('div',{class:'err'},errMsg):null,
+    el('div',{class:'row'},el('button',{class:'btn',onclick:cancel},'Cancel'),el('button',{class:'btn primary',onclick:save},'Add')));
+}
+function classEditor(){
+  const i=el('input',{id:'newClass',placeholder:'Class name, e.g. Physics',maxlength:'40',autocomplete:'off'});
+  const cancel=()=>{addingClass=false;errMsg='';render()};
+  const save=()=>{const name=i.value.trim();if(!name)return cancel();submit(()=>api('POST','',{type:'class',name}))};
+  i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save()}if(e.key==='Escape')cancel()});
+  return el('div',{class:'col'},el('div',{class:'editor'},i,errMsg?el('div',{class:'err'},errMsg):null,
+    el('div',{class:'row'},el('button',{class:'btn',onclick:cancel},'Cancel'),el('button',{class:'btn primary',onclick:save},'Add class'))));
+}
+
+load();
+// Pick up classmates' changes: every 20 seconds while the tab is open, and when you come back to it.
+setInterval(()=>{if(!document.hidden&&!openEditor&&!addingClass&&!armed)load()},20000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+</script>
+</body>
+</html>
